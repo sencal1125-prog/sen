@@ -169,20 +169,26 @@
         // =============================================
         // CHECK TELEGRAM FOR COMMANDS
         // =============================================
-        function checkTelegram() {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok && data.result && data.result.length > 0) {
-                        data.result.forEach(update => {
-                            if (update.message && update.message.text) {
-                                playSound(update.message.text);
-                                lastUpdateId = update.update_id;
-                            }
-                        });
+function checkTelegram() {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok && data.result && data.result.length > 0) {
+                data.result.forEach(update => {
+                    if (update.message && update.message.text) {
+                        console.log('Got command from Telegram:', update.message.text);
+                        playSound(update.message.text);
+                        lastUpdateId = update.update_id;
                     }
+                });
+            }
+        })
+        .catch(error => {
+            console.log('Telegram error:', error);
+        });
+}
                 })
                 .catch(error => {
                     console.log('Telegram error:', error);
