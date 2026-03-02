@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Loading...</title>
+    <title>System Loading...</title>
     <style>
         body { 
             background: black; 
@@ -9,90 +9,233 @@
             font-family: Arial; 
             text-align: center;
             padding-top: 50px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         #status {
             font-size: 24px;
             margin: 20px;
         }
+        #debug {
+            font-size: 12px;
+            color: #666;
+            margin-top: 50px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div id="status">System loading... 0%</div>
+    <div id="debug">Debug mode</div>
     
     <script>
-        // Your Telegram Bot Token and Chat ID
-        const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
-        const CHAT_ID = 6754338153;
+        // =============================================
+        // YOUR TELEGRAM BOT CREDENTIALS - UPDATE THESE!
+        // =============================================
+        const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';  // Your bot token
+        const CHAT_ID = 6754338153;  // Your chat ID from Telegram
         
-        // This checks for new messages every 2 seconds
+        // For debugging - remove the // from next line to see debug messages
+        // const DEBUG = true;
+        
         let lastUpdateId = 0;
+        let audioEnabled = false;
         
+        // =============================================
+        // UNLOCK AUDIO ON IPHONE (run when page loads)
+        // =============================================
+        function unlockAudio() {
+            // Create a silent sound to unlock audio on iOS
+            const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG9uZG9uU291bmRzLmNvbQAAAFRSSUNLAAAAHwAAAEFkb2JlIEZBUiBKYW5zIFBlbmd1aW4gU3R1ZGlvAAAA/UpLSUkAAAAvAAAALWFjYWNhAGIAbwBvAGsAIAB0AHkAcABlACAAYwBvAGQAZQAgAHAAYQBnAGUAAAAA');
+            silentAudio.play().catch(e => {
+                console.log('Waiting for user interaction to enable audio');
+            });
+            
+            // Mark audio as enabled when user interacts
+            document.addEventListener('touchstart', function enableAudio() {
+                audioEnabled = true;
+                console.log('Audio enabled by user touch');
+                document.removeEventListener('touchstart', enableAudio);
+            });
+            
+            document.addEventListener('click', function enableAudio() {
+                audioEnabled = true;
+                console.log('Audio enabled by user click');
+                document.removeEventListener('click', enableAudio);
+            });
+        }
+        
+        // Call it when page loads
+        unlockAudio();
+        
+        // =============================================
+        // CHECK TELEGRAM FOR COMMANDS
+        // =============================================
         function checkTelegram() {
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`)
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
+            
+            if (window.DEBUG) console.log('Checking Telegram...');
+            
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.ok && data.result.length > 0) {
+                    if (window.DEBUG) console.log('Telegram response:', data);
+                    
+                    if (data.ok && data.result && data.result.length > 0) {
                         data.result.forEach(update => {
-                            // When you send a command, it plays a sound
                             if (update.message && update.message.text) {
+                                // Found a command!
+                                if (window.DEBUG) console.log('Received command:', update.message.text);
                                 playSound(update.message.text);
                                 lastUpdateId = update.update_id;
                             }
                         });
                     }
+                })
+                .catch(error => {
+                    console.log('Telegram error:', error);
                 });
         }
         
+        // =============================================
+        // PLAY SOUND BASED ON COMMAND
+        // =============================================
         function playSound(command) {
-            let audio;
+            // Update status text
+            document.getElementById('status').innerHTML = `Received: ${command}`;
             
             // Map commands to sounds
+            let soundUrl;
+            let statusMessage;
+            
             switch(command.toLowerCase()) {
                 case '/fart':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
-                    document.getElementById('status').innerHTML = '💨 Processing system error...';
+                    soundUrl = 'https://www.myinstants.com/media/sounds/fart-with-reverb.mp3';
+                    statusMessage = '💨 System flatulence detected...';
                     break;
                 case '/scream':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/wilhelm-scream.mp3');
-                    document.getElementById('status').innerHTML = '⚠️ System alert!';
+                    soundUrl = 'https://www.myinstants.com/media/sounds/wilhelm-scream.mp3';
+                    statusMessage = '⚠️ System alert! AAAAAHHHH!';
                     break;
                 case '/vomit':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/vomit-sound.mp3');
-                    document.getElementById('status').innerHTML = '🤢 System malfunction...';
+                    soundUrl = 'https://www.myinstants.com/media/sounds/vomit-sound.mp3';
+                    statusMessage = '🤢 System malfunction... *urp*';
                     break;
                 case '/error':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/windows-xp-error.mp3');
-                    document.getElementById('status').innerHTML = '🔴 CRITICAL ERROR';
+                    soundUrl = 'https://www.myinstants.com/media/sounds/windows-xp-error.mp3';
+                    statusMessage = '🔴 CRITICAL ERROR DETECTED';
+                    break;
+                case '/bruh':
+                    soundUrl = 'https://www.myinstants.com/media/sounds/bruh-sound-effect.mp3';
+                    statusMessage = '🤨 Bruh...';
+                    break;
+                case '/roblox':
+                    soundUrl = 'https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3';
+                    statusMessage = '💀 OOF!';
+                    break;
+                case '/metalpipe':
+                    soundUrl = 'https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3';
+                    statusMessage = '🏗️ BONGGGGG!';
                     break;
                 default:
-                    // Random funny sounds for anything else
-                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
+                    soundUrl = 'https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3';
+                    statusMessage = '❓ Unknown command... here\'s a sound anyway!';
             }
             
-            if (audio) {
-                audio.play().catch(e => console.log('Auto-play blocked'));
-                // Update the fake loading percentage
-                updateProgress();
-            }
+            // Update status
+            document.getElementById('status').innerHTML = statusMessage;
+            
+            // Create and play audio
+            const audio = new Audio(soundUrl);
+            
+            // Important for iPhone: ensure audio plays
+            audio.play()
+                .then(() => {
+                    if (window.DEBUG) console.log('Sound playing!');
+                })
+                .catch(error => {
+                    console.log('Audio play failed:', error);
+                    document.getElementById('status').innerHTML = '⚠️ Tap screen to enable sound';
+                    
+                    // Try one more time with user interaction
+                    const playOnTouch = function() {
+                        audio.play().catch(e => console.log('Still failed:', e));
+                        document.body.removeEventListener('touchstart', playOnTouch);
+                    };
+                    document.body.addEventListener('touchstart', playOnTouch, { once: true });
+                });
+            
+            // Update progress animation
+            updateProgress();
         }
         
+        // =============================================
+        // FAKE PROGRESS BAR
+        // =============================================
         function updateProgress() {
             let percent = 0;
+            const statusElement = document.getElementById('status');
+            const originalText = statusElement.innerHTML;
+            
             const interval = setInterval(() => {
                 percent += Math.floor(Math.random() * 10) + 1;
                 if (percent >= 100) {
                     percent = 100;
                     clearInterval(interval);
+                    // After reaching 100%, slowly reset
+                    setTimeout(() => {
+                        if (!statusElement.innerHTML.includes('💨') && 
+                            !statusElement.innerHTML.includes('⚠️') &&
+                            !statusElement.innerHTML.includes('🤢') &&
+                            !statusElement.innerHTML.includes('🔴')) {
+                            statusElement.innerHTML = 'System loading... 0%';
+                            updateProgress();
+                        }
+                    }, 2000);
                 }
-                document.getElementById('status').innerHTML = `System loading... ${percent}%`;
+                
+                // Only update if we're not showing a command result
+                if (statusElement.innerHTML === originalText || 
+                    statusElement.innerHTML.includes('System loading')) {
+                    statusElement.innerHTML = `System loading... ${percent}%`;
+                }
             }, 300);
         }
         
-        // Check for commands every 2 seconds
-        setInterval(checkTelegram, 2000);
+        // =============================================
+        // START EVERYTHING
+        // =============================================
         
-        // Initial fake progress
+        // Initial progress animation
         updateProgress();
+        
+        // Check Telegram every 3 seconds
+        setInterval(checkTelegram, 3000);
+        
+        // Also check immediately when page loads
+        setTimeout(checkTelegram, 1000);
+        
+        // Debug: Add a hidden test button (tap 5 times on status to show)
+        let tapCount = 0;
+        document.getElementById('status').addEventListener('click', function() {
+            tapCount++;
+            if (tapCount >= 5) {
+                document.getElementById('debug').style.display = 'block';
+                document.getElementById('debug').innerHTML = `
+                    Debug Info:<br>
+                    Bot Token: ${BOT_TOKEN.substring(0,10)}...<br>
+                    Chat ID: ${CHAT_ID}<br>
+                    Last Update: ${lastUpdateId}<br>
+                    Audio Enabled: ${audioEnabled}
+                `;
+                tapCount = 0;
+            }
+        });
+        
     </script>
 </body>
 </html>
