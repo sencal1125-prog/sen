@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loading...</title>
+    <style>
+        body { 
+            background: black; 
+            color: white; 
+            font-family: Arial; 
+            text-align: center;
+            padding-top: 50px;
+        }
+        #status {
+            font-size: 24px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">System loading... 0%</div>
+    
+    <script>
+        // Your Telegram Bot Token and Chat ID
+        const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
+        const CHAT_ID = 6754338153;
+        
+        // This checks for new messages every 2 seconds
+        let lastUpdateId = 0;
+        
+        function checkTelegram() {
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.result.length > 0) {
+                        data.result.forEach(update => {
+                            // When you send a command, it plays a sound
+                            if (update.message && update.message.text) {
+                                playSound(update.message.text);
+                                lastUpdateId = update.update_id;
+                            }
+                        });
+                    }
+                });
+        }
+        
+        function playSound(command) {
+            let audio;
+            
+            // Map commands to sounds
+            switch(command.toLowerCase()) {
+                case '/fart':
+                    audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
+                    document.getElementById('status').innerHTML = '💨 Processing system error...';
+                    break;
+                case '/scream':
+                    audio = new Audio('https://www.myinstants.com/media/sounds/wilhelm-scream.mp3');
+                    document.getElementById('status').innerHTML = '⚠️ System alert!';
+                    break;
+                case '/vomit':
+                    audio = new Audio('https://www.myinstants.com/media/sounds/vomit-sound.mp3');
+                    document.getElementById('status').innerHTML = '🤢 System malfunction...';
+                    break;
+                case '/error':
+                    audio = new Audio('https://www.myinstants.com/media/sounds/windows-xp-error.mp3');
+                    document.getElementById('status').innerHTML = '🔴 CRITICAL ERROR';
+                    break;
+                default:
+                    // Random funny sounds for anything else
+                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
+            }
+            
+            if (audio) {
+                audio.play().catch(e => console.log('Auto-play blocked'));
+                // Update the fake loading percentage
+                updateProgress();
+            }
+        }
+        
+        function updateProgress() {
+            let percent = 0;
+            const interval = setInterval(() => {
+                percent += Math.floor(Math.random() * 10) + 1;
+                if (percent >= 100) {
+                    percent = 100;
+                    clearInterval(interval);
+                }
+                document.getElementById('status').innerHTML = `System loading... ${percent}%`;
+            }, 300);
+        }
+        
+        // Check for commands every 2 seconds
+        setInterval(checkTelegram, 2000);
+        
+        // Initial fake progress
+        updateProgress();
+    </script>
+</body>
+</html>
